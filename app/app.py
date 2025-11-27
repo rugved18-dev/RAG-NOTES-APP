@@ -133,25 +133,53 @@ with st.sidebar:
     st.title("⚙️ Settings")
     st.divider()
     
-    # Connection status
-    st.subheader("🔌 Ollama Connection")
+    # API Key Configuration
+    st.subheader("🔑 API Configuration")
+    
+    # Check for API key in environment
+    api_key_env = os.getenv("OPENAI_API_KEY", "").strip()
+    
+    # API key input in sidebar
+    api_key_input = st.text_input(
+        "OpenAI API Key",
+        value=api_key_env if api_key_env else "",
+        type="password",
+        help="Get your API key from https://platform.openai.com/api-keys",
+        placeholder="sk-..."
+    )
+    
+    # Validate and set API key
+    if api_key_input and api_key_input != api_key_env:
+        os.environ["OPENAI_API_KEY"] = api_key_input
+        st.success("✅ API Key configured!")
+        st.session_state.api_key_valid = True
+        if st.session_state.rag_chain is None:
+            st.session_state.rag_chain = RAGChain()
+            if st.session_state.rag_chain.load_existing_store():
+                st.info("ℹ️ Existing documents loaded!")
+    elif api_key_env:
+        st.success("✅ API Key loaded from .env")
+        st.session_state.api_key_valid = True
+        if st.session_state.rag_chain is None:
+            st.session_state.rag_chain = RAGChain()
+            if st.session_state.rag_chain.load_existing_store():
+                st.info("ℹ️ Existing documents loaded!")
+    else:
+        st.warning("⚠️ No OpenAI API key found")
+        st.session_state.api_key_valid = False
+    
+    st.divider()
+    
+    # Optional: Ollama Connection Info
+    st.subheader("💡 Alternative: Use Ollama (Free)")
+    st.caption("Run `ollama serve` in another terminal for free local AI")
     try:
         import requests
-        response = requests.get("http://localhost:11434/api/tags", timeout=2)
+        response = requests.get("http://localhost:11434/api/tags", timeout=1)
         if response.status_code == 200:
-            st.success("✅ Ollama is running (FREE local AI)")
-            st.session_state.api_key_valid = True
-            if st.session_state.rag_chain is None:
-                st.session_state.rag_chain = RAGChain()
-                if st.session_state.rag_chain.load_existing_store():
-                    st.info("ℹ️ Existing documents loaded!")
-        else:
-            st.error("❌ Ollama connection failed")
-            st.session_state.api_key_valid = False
+            st.info("✅ Ollama detected at localhost:11434")
     except:
-        st.error("❌ Ollama not running. Please start it:")
-        st.code("ollama serve", language="bash")
-        st.session_state.api_key_valid = False
+        st.caption("Ollama not detected (optional)")
     
     st.divider()
     
