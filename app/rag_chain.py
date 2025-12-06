@@ -2,7 +2,6 @@
 import os
 from typing import Optional, List, Dict
 import chromadb
-from chromadb.config import Settings
 from langchain.schema import Document
 from openai import OpenAI, APIError
 
@@ -21,14 +20,8 @@ class RAGChain:
         self.temperature = temperature
         self.chat_history: List[Dict] = []
         
-        # Initialize ChromaDB
-        settings = Settings(
-            chroma_db_impl="duckdb+parquet",
-            persist_directory=".chroma",
-            anonymized_telemetry=False,
-            allow_reset=True,
-        )
-        self.client = chromadb.Client(settings)
+        # Initialize ChromaDB with new API
+        self.client = chromadb.PersistentClient(path=".chroma")
         
         # Get or create collection
         try:
